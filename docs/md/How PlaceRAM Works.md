@@ -51,7 +51,7 @@ Typically, when using a sieve, you filter the larger components first. Perhaps a
 The sieve is implemented as a series of object constructors in `data.py`. By the end, the hierarchy is returned as a tree-like structure of an abstract class `Placeable`, indicating that this object is placeable.
 
 ## B. Place
-At the heart of the placement is the `Row` object. It acts as a kind of wrapper for opendbpy rows, keeping track of the x value automatically as well as adding taps when required.
+At the heart of the placement is the `Row` object. It acts as a kind of wrapper for opendb rows, keeping track of the x value automatically as well as adding taps when required.
 
 When placing a new instance, the algorithm is as follows.
 

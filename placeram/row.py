@@ -16,7 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from opendbpy import dbRow, dbInst, dbSite
+from opendb import dbRow, dbInst, dbSite
 from typing import List, Callable
 
 import re

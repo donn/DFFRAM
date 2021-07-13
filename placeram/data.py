@@ -19,7 +19,7 @@ from .util import d2a, sarv
 from .row import Row
 from .placeable import Placeable, DataError, RegExp
 
-from opendbpy import dbInst as Instance
+from opendb import dbInst as Instance
 
 import re
 import sys

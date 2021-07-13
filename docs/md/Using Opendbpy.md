@@ -2,11 +2,11 @@
 First of all, start by importing the module:
 
 ```python
-import opendbpy as odb
+import opendb as odb
 ```
 
 ## Creating a database
-You need to start by creating a database. This database will be linked to all of your calls to opendbpy directly or indirectly from now on.
+You need to start by creating a database. This database will be linked to all of your calls to opendb directly or indirectly from now on.
 
 ```python 
 db = odb.dbDatabase.create()
@@ -92,4 +92,4 @@ for i in existing_instances + [new_instance]:
 odb.write_def(block, output_def_path) # Returns 1 on success
 ```
 
-These are all the basics you need to know when using opendbpy.
+These are all the basics you need to know when using opendb.

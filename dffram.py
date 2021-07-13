@@ -224,6 +224,9 @@ def floorplan(build_folder, design, wmargin_sites, hmargin_sites, width, height,
     wmargin = wmargin_sites * SITE_WIDTH
     hmargin = hmargin_sites * SITE_HEIGHT
 
+    height += 0.1
+    width += 0.1
+
     full_width = width + (wmargin * 2)
     full_height = height + (hmargin * 2)
 
@@ -241,9 +244,9 @@ def floorplan(build_folder, design, wmargin_sites, hmargin_sites, width, height,
         initialize_floorplan\\
             -die_area "0 0 {full_width} {full_height}"\\
             -core_area "{wmargin} {hmargin} {wpm} {hpm}"\\
-            -site unithd\\
-            -tracks {pdk_tech_dir}/openlane/sky130_fd_sc_hd/tracks.info
-        # source {track_file}
+            -site unithd
+        #    -tracks {pdk_tech_dir}/openlane/sky130_fd_sc_hd/tracks.info
+        source {track_file}
         write_def {out_file}
         """)
 
@@ -251,7 +254,7 @@ def floorplan(build_folder, design, wmargin_sites, hmargin_sites, width, height,
         f.write(f"""
         set -e
 
-        # python3 /openLANE_flow/scripts/new_tracks.py -i {pdk_tech_dir}/openlane/sky130_fd_sc_hd/tracks.info -o {track_file}
+        python3 /openLANE_flow/scripts/new_tracks.py -i {pdk_tech_dir}/openlane/sky130_fd_sc_hd/tracks.info -o {track_file}
         openroad {build_folder}/fp_init.tcl
         """)
 
@@ -265,7 +268,7 @@ def placeram(in_file, out_file, size, building_blocks, dimensions=os.devnull, de
     unaltered = out_file + ".ref"
 
     openlane(
-        "python3", "-m", "placeram",
+        "openroad", "-python", "-m", "placeram",
         "--output", unaltered,
         "--lef", "%s/sky130_fd_sc_hd.lef" % pdk_lef_dir,
         "--tech-lef", "%s/sky130_fd_sc_hd.tlef" % pdk_tlef_dir,
@@ -292,8 +295,8 @@ def place_pins(build_folder, in_file, out_file, pin_order_file):
     print("--- Pin Placement ---")
 
     openlane(
-        "python3",
-        "/openLANE_flow/scripts/io_place.py",
+        "openroad", "-python",
+        "./scripts/python/io_place.py",
         "--input-lef", f"{build_folder}/sky130_fd_sc_hd.merged.lef",
         "--input-def", in_file,
         "--config", pin_order_file,
@@ -404,7 +407,7 @@ def obs_route(build_folder, metal_layer, width, height, in_file, out_file):
     global last_def
     print("--- Routing Obstruction Creation---")
     openlane(
-        "python3",
+        "openroad", "-python",
         "/openLANE_flow/scripts/add_def_obstructions.py",
         "--lef", "%s/sky130_fd_sc_hd.merged.lef" % build_folder,
         "--input-def", in_file,
@@ -437,15 +440,13 @@ def route(build_folder, in_file, out_file):
         read_liberty {pdk_liberty_dir}/sky130_fd_sc_hd__tt_025C_1v80.lib
         read_lef {build_folder}/sky130_fd_sc_hd.merged.lef
         read_def {in_file}
-        set ::env(GLB_RT_ALLOW_CONGESTION) "1"
+        set_routing_layers\\
+            -signal met1-met5\\
+            -clock met3-met5
         global_route \\
             -guide_file {global_route_guide} \\
-            -layers $global_routing_layers \\
-            -clock_layers $global_routing_clock_layers \\
-            -unidirectional_routing \\
             -overflow_iterations 100
-        # repair_antennas sky130_fd_sc_hd__diode_2/DIODE
-        tr::detailed_route_cmd {build_folder}/tr.param
+        detailed_route -param {build_folder}/tr.param
         """)
 
     openlane("openroad", "%s/route.tcl" % build_folder)
@@ -453,7 +454,7 @@ def route(build_folder, in_file, out_file):
 
 def spef_extract(build_folder, def_file, spef_file=None):
     print("--- Extract SPEF ---")
-    openlane("python3", "/openLANE_flow/scripts/spef_extractor/main.py",
+    openlane("openroad", "-python", "/openLANE_flow/scripts/spef_extractor/main.py",
             "--def_file", def_file,
             "--lef_file", "%s/sky130_fd_sc_hd.merged.lef"%build_folder,
             "--wire_model", "L",
@@ -465,7 +466,7 @@ def add_pwr_gnd_pins(build_folder, original_netlist,
     global last_def
     print("--- Adding power and ground pins to netlist ---")
 
-    openlane("python3", "/openLANE_flow/scripts/write_powered_def.py",
+    openlane("openroad", "-python", "/openLANE_flow/scripts/write_powered_def.py",
             "-d", def_file,
             "-l", "%s/sky130_fd_sc_hd.merged.lef"%build_folder,
             "--power-port", "VPWR",
@@ -781,6 +782,7 @@ def flow(frm, to, only, pdk_root, skip, size, building_blocks, clk_period, varia
         width, height = map(lambda x: float(x), open(dimensions_file).read().split("x"))
         floorplan(build_folder, design, wmargin, hmargin, width, height, netlist, final_floorplan)
         placeram(final_floorplan, no_pins_placement, size, building_blocks, density=density_file)
+        verify_placement(build_folder, no_pins_placement)
         place_pins(build_folder, no_pins_placement, final_placement, pin_order_file)
         verify_placement(build_folder, final_placement)
 

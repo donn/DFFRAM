@@ -17,7 +17,7 @@
 # limitations under the License.
 
 try:
-    import opendbpy as odb
+    import opendb as odb
 except:
     print("""
     placeram needs to be inside OpenROAD:
@@ -115,7 +115,7 @@ class Placer:
         self.hierarchy.represent(file=file)
 
     def place(self):
-        eprint("Starting placement…")
+        eprint("Starting placement across %i rows…" % len(self.rows))
         last_row = self.hierarchy.place(self.rows)
 
         Row.fill_rows(self.rows, 0,  last_row)
@@ -147,7 +147,7 @@ class Placer:
             height = master.getHeight() / self.micron_in_units
             logical_area += width * height
 
-        eprint("Placement concluded with core area of %fµm x %fµm." % (self.core_width, self.core_height))
+        eprint("Placement concluded with core area of %fµm x %fµm. (%i rows)" % (self.core_width, self.core_height, last_row))
 
         die_area = self.block.getDieArea().area() / (self.micron_in_units * self.micron_in_units)
         
